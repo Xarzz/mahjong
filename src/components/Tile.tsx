@@ -8,12 +8,14 @@ interface TileProps {
   styleOffset?: { x: number, y: number };
 }
 
+const UNIT = 50;
+
 export const Tile: React.FC<TileProps> = ({ data, isFree, onClick, styleOffset = { x: 0, y: 0 } }) => {
   const isMatched = data.state === 'matched';
   const isSelected = data.state === 'selected';
+  const isWrong = data.state === 'wrong';
   
-  const UNIT = 45;
-  const zOffset = data.z * 10; 
+  const zOffset = data.z * 8; 
 
   // Position including visual 3D shift, then subtracted by the board's minimum visual bound
   const left = (data.x * UNIT - zOffset) - styleOffset.x;
@@ -21,16 +23,23 @@ export const Tile: React.FC<TileProps> = ({ data, isFree, onClick, styleOffset =
   
   const zIndex = data.z * 100 + data.x + data.y;
 
+  const classNames = [
+    'mahjong-tile',
+    isFree ? 'is-free' : 'is-blocked',
+    isSelected ? 'is-selected' : '',
+    isMatched ? 'is-matched' : '',
+    isWrong ? 'is-wrong' : '',
+  ].filter(Boolean).join(' ');
+
   return (
     <div
-      className={`mahjong-tile ${isFree ? 'is-free' : 'is-blocked'} ${isSelected ? 'is-selected' : ''} ${isMatched ? 'is-matched' : ''}`}
+      className={classNames}
       style={{
-        width: `${UNIT * 2 - 4}px`,
-        height: `${UNIT * 2 - 4}px`,
+        width: `${UNIT * 2 + 8}px`,
+        height: `${UNIT * 2 + 8}px`,
         left: `${left}px`,
         top: `${top}px`,
         zIndex: zIndex,
-        transform: isSelected ? 'translateY(-10px)' : 'none',
       }}
       onClick={() => {
         if (isFree) onClick(data);

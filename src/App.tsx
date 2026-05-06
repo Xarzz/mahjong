@@ -1,9 +1,10 @@
+import React from 'react';
 import { GameBoard } from './components/GameBoard';
 import './index.css';
 
 function App() {
   return (
-    <div className="w-full min-h-screen">
+    <div className="app-root">
       <GameBoard />
     </div>
   );

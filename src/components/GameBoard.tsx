@@ -1,16 +1,18 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { type TileData, generateBoard, isTileFree, getTheme } from '../utils/board';
 import { Tile } from './Tile';
 import confetti from 'canvas-confetti';
 import { RefreshCw, Trophy, Target, Sparkles } from 'lucide-react';
 
-const UNIT = 45;
+const UNIT = 50;
 
 export const GameBoard: React.FC = () => {
   const [level, setLevel] = useState(1);
   const [score, setScore] = useState(0);
   const [board, setBoard] = useState<TileData[]>([]);
   const [selectedTile, setSelectedTile] = useState<TileData | null>(null);
+  const [scale, setScale] = useState(1);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const theme = useMemo(() => getTheme(level), [level]);
 
@@ -19,14 +21,51 @@ export const GameBoard: React.FC = () => {
     setSelectedTile(null);
   }, [level]);
 
+  // Calculate visual boundaries
+  const bounds = useMemo(() => {
+    if (board.length === 0) return { width: 0, height: 0, offsetX: 0, offsetY: 0 };
+    const visualXs = board.map(t => t.x * UNIT - t.z * 8);
+    const visualYs = board.map(t => t.y * UNIT - t.z * 8);
+    const minX = Math.min(...visualXs);
+    const maxX = Math.max(...visualXs);
+    const minY = Math.min(...visualYs);
+    const maxY = Math.max(...visualYs);
+    return {
+      width: (maxX - minX) + (UNIT * 2) + 16,
+      height: (maxY - minY) + (UNIT * 2) + 16,
+      offsetX: minX,
+      offsetY: minY
+    };
+  }, [board]);
+
+  // Dynamic scaling
+  const recalcScale = useCallback(() => {
+    if (!containerRef.current || bounds.width === 0) return;
+    const cW = containerRef.current.clientWidth;
+    const cH = containerRef.current.clientHeight;
+    if (cW === 0 || cH === 0) return;
+
+    const sX = cW / bounds.width;
+    const sY = cH / bounds.height;
+    setScale(Math.max(0.15, Math.min(sX, sY, 3)));
+  }, [bounds]);
+
+  useEffect(() => {
+    recalcScale();
+    window.addEventListener('resize', recalcScale);
+    return () => window.removeEventListener('resize', recalcScale);
+  }, [recalcScale]);
+
   const handleTileClick = (tile: TileData) => {
     if (!isTileFree(tile, board)) return;
 
     if (selectedTile) {
       if (selectedTile.id === tile.id) {
+        // Deselect
         setBoard(b => b.map(t => t.id === tile.id ? { ...t, state: 'idle' as const } : t));
         setSelectedTile(null);
       } else if (selectedTile.char === tile.char) {
+        // Correct match!
         const newBoard = board.map(t => 
           t.id === tile.id || t.id === selectedTile.id 
             ? { ...t, state: 'matched' as const } 
@@ -43,20 +82,28 @@ export const GameBoard: React.FC = () => {
             origin: { y: 0.6 },
             colors: [theme.primary, '#ffffff', '#fbbf24']
           });
-          
           setTimeout(() => {
-            if (level < 100) {
-              setLevel(prev => prev + 1);
-            }
+            if (level < 100) setLevel(prev => prev + 1);
           }, 1500);
         }
       } else {
+        // WRONG match → shake both tiles
+        const wrongId1 = selectedTile.id;
+        const wrongId2 = tile.id;
+        
         setBoard(b => b.map(t => {
-          if (t.id === tile.id) return { ...t, state: 'selected' as const };
-          if (t.id === selectedTile.id) return { ...t, state: 'idle' as const };
+          if (t.id === wrongId1 || t.id === wrongId2) return { ...t, state: 'wrong' as const };
           return t;
         }));
-        setSelectedTile(tile);
+        setSelectedTile(null);
+
+        // After shake animation, reset to idle
+        setTimeout(() => {
+          setBoard(b => b.map(t => {
+            if (t.id === wrongId1 || t.id === wrongId2) return { ...t, state: 'idle' as const };
+            return t;
+          }));
+        }, 600);
       }
     } else {
       setBoard(b => b.map(t => t.id === tile.id ? { ...t, state: 'selected' as const } : t));
@@ -71,28 +118,6 @@ export const GameBoard: React.FC = () => {
   };
 
   const remainingPairs = board.filter(t => t.state !== 'matched').length / 2;
-
-  // Calculate visual boundaries including 3D offsets
-  const bounds = useMemo(() => {
-    if (board.length === 0) return { width: 0, height: 0, offsetX: 0, offsetY: 0 };
-    
-    // Each tile visual left = x * UNIT - z * 10
-    const visualXs = board.map(t => t.x * UNIT - t.z * 10);
-    const visualYs = board.map(t => t.y * UNIT - t.z * 10);
-    
-    const minX = Math.min(...visualXs);
-    const maxX = Math.max(...visualXs);
-    const minY = Math.min(...visualYs);
-    const maxY = Math.max(...visualYs);
-    
-    // Tile width is UNIT * 2. Add 8px for the 3D side-right thickness
-    return {
-      width: (maxX - minX) + (UNIT * 2) + 8,
-      height: (maxY - minY) + (UNIT * 2) + 8,
-      offsetX: minX,
-      offsetY: minY
-    };
-  }, [board]);
 
   return (
     <div className="game-container" style={{ 
@@ -127,12 +152,13 @@ export const GameBoard: React.FC = () => {
         </div>
       </div>
 
-      <div className="board-container" style={{ background: theme.panel }}>
+      <div className="board-container" ref={containerRef}>
         <div 
           className="board-inner"
           style={{ 
             width: `${bounds.width}px`, 
-            height: `${bounds.height}px`
+            height: `${bounds.height}px`,
+            transform: `translate(-50%, -50%) scale(${scale})`
           }}
         >
           {board.map(tile => (
