@@ -22,13 +22,13 @@ export const GameBoard: React.FC = () => {
 
     if (selectedTile) {
       if (selectedTile.id === tile.id) {
-        setBoard(b => b.map(t => t.id === tile.id ? { ...t, state: 'idle' } : t));
+        setBoard(b => b.map(t => t.id === tile.id ? { ...t, state: 'idle' as const } : t));
         setSelectedTile(null);
       } else if (selectedTile.char === tile.char) {
         // Match!
         const newBoard = board.map(t => 
           t.id === tile.id || t.id === selectedTile.id 
-            ? { ...t, state: 'matched' } 
+            ? { ...t, state: 'matched' as const } 
             : t
         );
         setBoard(newBoard);
@@ -52,14 +52,14 @@ export const GameBoard: React.FC = () => {
         }
       } else {
         setBoard(b => b.map(t => {
-          if (t.id === tile.id) return { ...t, state: 'selected' };
-          if (t.id === selectedTile.id) return { ...t, state: 'idle' };
+          if (t.id === tile.id) return { ...t, state: 'selected' as const };
+          if (t.id === selectedTile.id) return { ...t, state: 'idle' as const };
           return t;
         }));
         setSelectedTile(tile);
       }
     } else {
-      setBoard(b => b.map(t => t.id === tile.id ? { ...t, state: 'selected' } : t));
+      setBoard(b => b.map(t => t.id === tile.id ? { ...t, state: 'selected' as const } : t));
       setSelectedTile(tile);
     }
   };
