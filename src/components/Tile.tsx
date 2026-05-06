@@ -13,11 +13,12 @@ export const Tile: React.FC<TileProps> = ({ data, isFree, onClick, styleOffset =
   const isSelected = data.state === 'selected';
   
   const UNIT = 45;
-
-  const left = data.x * UNIT - styleOffset.x;
-  const top = data.y * UNIT - styleOffset.y;
-  
   const zOffset = data.z * 10; 
+
+  // Position including visual 3D shift, then subtracted by the board's minimum visual bound
+  const left = (data.x * UNIT - zOffset) - styleOffset.x;
+  const top = (data.y * UNIT - zOffset) - styleOffset.y;
+  
   const zIndex = data.z * 100 + data.x + data.y;
 
   return (
@@ -26,8 +27,8 @@ export const Tile: React.FC<TileProps> = ({ data, isFree, onClick, styleOffset =
       style={{
         width: `${UNIT * 2 - 4}px`,
         height: `${UNIT * 2 - 4}px`,
-        left: `${left - zOffset}px`,
-        top: `${top - zOffset}px`,
+        left: `${left}px`,
+        top: `${top}px`,
         zIndex: zIndex,
         transform: isSelected ? 'translateY(-10px)' : 'none',
       }}

@@ -72,21 +72,25 @@ export const GameBoard: React.FC = () => {
 
   const remainingPairs = board.filter(t => t.state !== 'matched').length / 2;
 
-  // Calculate board boundaries to center it
+  // Calculate visual boundaries including 3D offsets
   const bounds = useMemo(() => {
     if (board.length === 0) return { width: 0, height: 0, offsetX: 0, offsetY: 0 };
-    const xs = board.map(t => t.x);
-    const ys = board.map(t => t.y);
-    const minX = Math.min(...xs);
-    const maxX = Math.max(...xs);
-    const minY = Math.min(...ys);
-    const maxY = Math.max(...ys);
     
+    // Each tile visual left = x * UNIT - z * 10
+    const visualXs = board.map(t => t.x * UNIT - t.z * 10);
+    const visualYs = board.map(t => t.y * UNIT - t.z * 10);
+    
+    const minX = Math.min(...visualXs);
+    const maxX = Math.max(...visualXs);
+    const minY = Math.min(...visualYs);
+    const maxY = Math.max(...visualYs);
+    
+    // Tile width is UNIT * 2. Add 8px for the 3D side-right thickness
     return {
-      width: (maxX - minX + 2) * UNIT,
-      height: (maxY - minY + 2) * UNIT,
-      offsetX: minX * UNIT,
-      offsetY: minY * UNIT
+      width: (maxX - minX) + (UNIT * 2) + 8,
+      height: (maxY - minY) + (UNIT * 2) + 8,
+      offsetX: minX,
+      offsetY: minY
     };
   }, [board]);
 
@@ -137,7 +141,6 @@ export const GameBoard: React.FC = () => {
               data={tile}
               isFree={isTileFree(tile, board)}
               onClick={handleTileClick}
-              // Adjust position by subtracting min bounds to local center
               styleOffset={{ x: bounds.offsetX, y: bounds.offsetY }}
             />
           ))}
