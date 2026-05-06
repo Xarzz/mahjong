@@ -31,17 +31,17 @@ export function getTheme(level: number): GameTheme {
 
 export function generateLayout(level: number) {
   const layout: number[][] = [];
-  // Grid size grows from 4x4 up to 10x10
+  // Start larger: 6x6 grid up to 12x12
   const sizeMultiplier = Math.floor((level - 1) / 10);
-  const baseSize = Math.min(4 + sizeMultiplier, 10);
-  // Layers grow from 2 to 6
-  const layers = Math.min(2 + Math.floor((level - 1) / 20), 6);
+  const baseSize = Math.min(6 + sizeMultiplier, 12);
+  // More layers: 3 to 8
+  const layers = Math.min(3 + Math.floor((level - 1) / 15), 8);
 
   for (let z = 0; z < layers; z++) {
     const currentSize = baseSize - z;
     if (currentSize <= 0) break;
     
-    const offset = z * 0.5; // Offset by half a unit for pyramid look
+    const offset = z * 0.5;
     
     for (let x = 0; x < currentSize; x++) {
       for (let y = 0; y < currentSize; y++) {
@@ -50,7 +50,6 @@ export function generateLayout(level: number) {
     }
   }
 
-  // Ensure even count
   if (layout.length % 2 !== 0) layout.pop();
   return layout;
 }
@@ -59,7 +58,8 @@ const CHARACTERS = [
   'あ','い','う','え','お','か','き','く','け','こ','さ','し','す','せ','そ',
   '日','月','火','水','木','金','土','山','川','空','花','鳥','風','心','海',
   '一','二','三','四','五','六','七','八','九','十','人','子','女','学','生',
-  '友','愛','和','力','気','天','地','光','暗','大','小','長','高','安','新'
+  '友','愛','和','力','气','天','地','光','暗','大','小','长','高','安','新',
+  '木','林','森','川','山','石','田','月','日','星','雲','雨','雪','電','風'
 ];
 
 export function generateBoard(level: number): TileData[] {
@@ -68,8 +68,7 @@ export function generateBoard(level: number): TileData[] {
   const numPairs = totalTiles / 2;
   
   let selectedChars: string[] = [];
-  // Use more variety of characters as levels go up
-  const variety = Math.min(6 + level, CHARACTERS.length);
+  const variety = Math.min(10 + level, CHARACTERS.length);
   const pool = CHARACTERS.slice(0, variety);
 
   for (let i = 0; i < numPairs; i++) {
@@ -77,7 +76,6 @@ export function generateBoard(level: number): TileData[] {
     selectedChars.push(char, char);
   }
   
-  // Shuffle characters
   for (let i = selectedChars.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [selectedChars[i], selectedChars[j]] = [selectedChars[j], selectedChars[i]];

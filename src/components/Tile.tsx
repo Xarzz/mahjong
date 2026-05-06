@@ -11,7 +11,7 @@ export const Tile: React.FC<TileProps> = ({ data, isFree, onClick }) => {
   const isMatched = data.state === 'matched';
   const isSelected = data.state === 'selected';
   
-  const UNIT = 35;
+  const UNIT = 45;
 
   const left = data.x * UNIT;
   const top = data.y * UNIT;
