@@ -202,7 +202,7 @@ export function generateBoard(level: number): TileData[] {
   }));
 }
 
-export function isTileFree(tile: TileData, board: TileData[]): boolean {
+export function isTileFree(tile: TileData, _board: TileData[]): boolean {
   if (tile.state === 'matched') return false;
   // No stacking = all non-matched tiles are always free
   return true;
