@@ -4,7 +4,7 @@ import { Tile } from './Tile';
 import confetti from 'canvas-confetti';
 import { RefreshCw, Trophy, Target, Sparkles } from 'lucide-react';
 
-const UNIT = 50;
+const UNIT = 55;
 
 export const GameBoard: React.FC = () => {
   const [level, setLevel] = useState(1);
@@ -21,24 +21,24 @@ export const GameBoard: React.FC = () => {
     setSelectedTile(null);
   }, [level]);
 
-  // Calculate visual boundaries
+  // Calculate visual boundaries (no z-offset since all flat)
   const bounds = useMemo(() => {
     if (board.length === 0) return { width: 0, height: 0, offsetX: 0, offsetY: 0 };
-    const visualXs = board.map(t => t.x * UNIT - t.z * 8);
-    const visualYs = board.map(t => t.y * UNIT - t.z * 8);
-    const minX = Math.min(...visualXs);
-    const maxX = Math.max(...visualXs);
-    const minY = Math.min(...visualYs);
-    const maxY = Math.max(...visualYs);
+    const xs = board.map(t => t.x * UNIT);
+    const ys = board.map(t => t.y * UNIT);
+    const minX = Math.min(...xs);
+    const maxX = Math.max(...xs);
+    const minY = Math.min(...ys);
+    const maxY = Math.max(...ys);
     return {
-      width: (maxX - minX) + (UNIT * 2) + 16,
-      height: (maxY - minY) + (UNIT * 2) + 16,
+      width: (maxX - minX) + (UNIT * 2),
+      height: (maxY - minY) + (UNIT * 2),
       offsetX: minX,
       offsetY: minY
     };
   }, [board]);
 
-  // Dynamic scaling
+  // Dynamic scaling — fill container
   const recalcScale = useCallback(() => {
     if (!containerRef.current || bounds.width === 0) return;
     const cW = containerRef.current.clientWidth;
@@ -47,7 +47,7 @@ export const GameBoard: React.FC = () => {
 
     const sX = cW / bounds.width;
     const sY = cH / bounds.height;
-    setScale(Math.max(0.15, Math.min(sX, sY, 3)));
+    setScale(Math.max(0.2, Math.min(sX, sY, 3)));
   }, [bounds]);
 
   useEffect(() => {
@@ -66,9 +66,9 @@ export const GameBoard: React.FC = () => {
         setSelectedTile(null);
       } else if (selectedTile.char === tile.char) {
         // Correct match!
-        const newBoard = board.map(t => 
-          t.id === tile.id || t.id === selectedTile.id 
-            ? { ...t, state: 'matched' as const } 
+        const newBoard = board.map(t =>
+          t.id === tile.id || t.id === selectedTile.id
+            ? { ...t, state: 'matched' as const }
             : t
         );
         setBoard(newBoard);
@@ -90,14 +90,13 @@ export const GameBoard: React.FC = () => {
         // WRONG match → shake both tiles
         const wrongId1 = selectedTile.id;
         const wrongId2 = tile.id;
-        
+
         setBoard(b => b.map(t => {
           if (t.id === wrongId1 || t.id === wrongId2) return { ...t, state: 'wrong' as const };
           return t;
         }));
         setSelectedTile(null);
 
-        // After shake animation, reset to idle
         setTimeout(() => {
           setBoard(b => b.map(t => {
             if (t.id === wrongId1 || t.id === wrongId2) return { ...t, state: 'idle' as const };
@@ -120,7 +119,7 @@ export const GameBoard: React.FC = () => {
   const remainingPairs = board.filter(t => t.state !== 'matched').length / 2;
 
   return (
-    <div className="game-container" style={{ 
+    <div className="game-container" style={{
       backgroundColor: theme.bg,
       backgroundImage: `radial-gradient(circle at 15% 50%, ${theme.primaryGlow}, transparent 25%), radial-gradient(circle at 85% 30%, ${theme.primaryGlow}, transparent 25%)`
     }}>
@@ -136,7 +135,7 @@ export const GameBoard: React.FC = () => {
             <p className="subtitle">Tema: {theme.name}</p>
           </div>
         </div>
-        
+
         <div className="stats-container">
           <div className="stat-item">
             <Trophy size={18} className="stat-icon" style={{ color: '#fbbf24' }} />
@@ -153,10 +152,10 @@ export const GameBoard: React.FC = () => {
       </div>
 
       <div className="board-container" ref={containerRef}>
-        <div 
+        <div
           className="board-inner"
-          style={{ 
-            width: `${bounds.width}px`, 
+          style={{
+            width: `${bounds.width}px`,
             height: `${bounds.height}px`,
             transform: `translate(-50%, -50%) scale(${scale})`
           }}

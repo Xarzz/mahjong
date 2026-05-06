@@ -34,156 +34,133 @@ export function getTheme(level: number): GameTheme {
   return THEMES[index];
 }
 
-// ============ 10 ABSTRACT LAYOUT PATTERNS ============
-// Each is [x, y] grid positions for the base layer (z=0)
+// ===================================================================
+// ABSTRACT FLAT LAYOUT PATTERNS — ALL z=0, no stacking
+// Each [col, row] pair becomes position [col*2, row*2, 0] in game space.
+// Tiles are spaced out with visible gaps between them.
+// ===================================================================
 
-// Pattern 0: Cross / Plus
-const P_CROSS: number[][] = [
-  [3,0],[4,0],
-  [3,1],[4,1],
-  [3,2],[4,2],
-  [0,3],[1,3],[2,3],[3,3],[4,3],[5,3],[6,3],[7,3],
-  [0,4],[1,4],[2,4],[3,4],[4,4],[5,4],[6,4],[7,4],
-  [3,5],[4,5],
-  [3,6],[4,6],
-  [3,7],[4,7],
+const PATTERNS: number[][][] = [
+  // 0: Scattered diamond (12 tiles)
+  [
+    [3,0],[4,0],
+    [2,1],[5,1],
+    [1,2],[6,2],
+    [2,3],[5,3],
+    [3,4],[4,4],
+    [1,4],[6,4],
+  ],
+  // 1: Small cross (14 tiles)
+  [
+    [3,0],[4,0],
+    [3,1],[4,1],
+    [1,2],[2,2],[3,2],[4,2],[5,2],[6,2],
+    [3,3],[4,3],
+    [3,4],[4,4],
+  ],
+  // 2: Two wings (14 tiles)
+  [
+    [0,0],[1,0],[5,0],[6,0],
+    [0,1],[6,1],
+    [1,2],[5,2],
+    [0,3],[6,3],
+    [0,4],[1,4],[5,4],[6,4],
+  ],
+  // 3: Zigzag (12 tiles)
+  [
+    [0,0],[1,0],
+    [2,1],[3,1],
+    [4,2],[5,2],
+    [2,3],[3,3],
+    [0,4],[1,4],
+    [2,5],[3,5],
+  ],
+  // 4: Flower petals (12 tiles)
+  [
+    [3,0],[4,0],
+    [1,1],[6,1],
+    [0,2],[3,2],[4,2],[7,2],
+    [1,3],[6,3],
+    [3,4],[4,4],
+  ],
+  // 5: Open diamond (24 tiles)
+  [
+    [3,0],[4,0],
+    [2,1],[3,1],[4,1],[5,1],
+    [1,2],[2,2],[5,2],[6,2],
+    [0,3],[1,3],[6,3],[7,3],
+    [1,4],[2,4],[5,4],[6,4],
+    [2,5],[3,5],[4,5],[5,5],
+    [3,6],[4,6],
+  ],
+  // 6: H-shape (22 tiles)
+  [
+    [0,0],[1,0],[6,0],[7,0],
+    [0,1],[1,1],[6,1],[7,1],
+    [0,2],[1,2],[3,2],[4,2],[6,2],[7,2],
+    [0,3],[1,3],[6,3],[7,3],
+    [0,4],[1,4],[6,4],[7,4],
+  ],
+  // 7: Ring / frame (20 tiles)
+  [
+    [1,0],[2,0],[3,0],[4,0],[5,0],[6,0],
+    [0,1],[7,1],
+    [0,2],[7,2],
+    [0,3],[7,3],
+    [0,4],[7,4],
+    [1,5],[2,5],[3,5],[4,5],[5,5],[6,5],
+  ],
+  // 8: Arrow right (18 tiles)
+  [
+    [0,0],[1,0],
+    [0,1],[1,1],[2,1],[3,1],
+    [0,2],[1,2],[2,2],[3,2],[4,2],[5,2],
+    [0,3],[1,3],[2,3],[3,3],
+    [0,4],[1,4],
+  ],
+  // 9: Spiral steps (18 tiles)
+  [
+    [2,0],[3,0],[4,0],[5,0],[6,0],
+    [1,1],
+    [0,2],[1,2],[2,2],[3,2],[4,2],
+    [4,3],
+    [1,4],[2,4],[3,4],[4,4],[5,4],[6,4],
+  ],
 ];
 
-// Pattern 1: Diamond
-const P_DIAMOND: number[][] = [
-  [3,0],[4,0],
-  [2,1],[3,1],[4,1],[5,1],
-  [1,2],[2,2],[3,2],[4,2],[5,2],[6,2],
-  [0,3],[1,3],[2,3],[3,3],[4,3],[5,3],[6,3],[7,3],
-  [1,4],[2,4],[3,4],[4,4],[5,4],[6,4],
-  [2,5],[3,5],[4,5],[5,5],
-  [3,6],[4,6],
-];
+/**
+ * Generate a layout for the given level.
+ * - Levels 1-50: use a single pattern from PATTERNS (cycles through all 10)
+ * - Levels 51-100: combine two patterns side-by-side for bigger boards
+ * All tiles are on z=0 — no stacking.
+ */
+export function generateLayout(level: number): number[][] {
+  const patternIndex = (level - 1) % PATTERNS.length;
+  const basePattern = PATTERNS[patternIndex];
 
-// Pattern 2: T-Shape
-const P_TSHAPE: number[][] = [
-  [0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],
-  [0,1],[1,1],[2,1],[3,1],[4,1],[5,1],[6,1],[7,1],
-  [3,2],[4,2],
-  [3,3],[4,3],
-  [2,4],[3,4],[4,4],[5,4],
-  [2,5],[3,5],[4,5],[5,5],
-];
+  let positions: number[][];
 
-// Pattern 3: Butterfly / Hourglass
-const P_BUTTERFLY: number[][] = [
-  [0,0],[1,0],[2,0],[5,0],[6,0],[7,0],
-  [1,1],[2,1],[5,1],[6,1],
-  [2,2],[3,2],[4,2],[5,2],
-  [3,3],[4,3],
-  [2,4],[3,4],[4,4],[5,4],
-  [1,5],[2,5],[5,5],[6,5],
-  [0,6],[1,6],[2,6],[5,6],[6,6],[7,6],
-];
+  if (level <= 50) {
+    // Single pattern
+    positions = basePattern.map(([c, r]) => [c * 2, r * 2, 0]);
+  } else {
+    // Combine two patterns side by side for harder levels
+    const secondIndex = (patternIndex + 5) % PATTERNS.length;
+    const secondPattern = PATTERNS[secondIndex];
 
-// Pattern 4: Castle / Fortress
-const P_CASTLE: number[][] = [
-  [0,0],[1,0],[3,0],[4,0],[6,0],[7,0],
-  [0,1],[1,1],[2,1],[3,1],[4,1],[5,1],[6,1],[7,1],
-  [1,2],[2,2],[3,2],[4,2],[5,2],[6,2],
-  [2,3],[3,3],[4,3],[5,3],
-  [1,4],[2,4],[3,4],[4,4],[5,4],[6,4],
-  [0,5],[1,5],[2,5],[3,5],[4,5],[5,5],[6,5],[7,5],
-];
+    // Find max column of first pattern to offset the second
+    const maxCol = Math.max(...basePattern.map(p => p[0]));
+    const gap = 3; // gap between the two patterns
 
-// Pattern 5: Arrow Up
-const P_ARROW: number[][] = [
-  [3,0],[4,0],
-  [2,1],[3,1],[4,1],[5,1],
-  [1,2],[2,2],[3,2],[4,2],[5,2],[6,2],
-  [0,3],[1,3],[2,3],[3,3],[4,3],[5,3],[6,3],[7,3],
-  [3,4],[4,4],
-  [3,5],[4,5],
-  [3,6],[4,6],
-  [3,7],[4,7],
-];
+    const left = basePattern.map(([c, r]) => [c * 2, r * 2, 0]);
+    const right = secondPattern.map(([c, r]) => [(c + maxCol + gap) * 2, r * 2, 0]);
 
-// Pattern 6: H-Shape
-const P_HSHAPE: number[][] = [
-  [0,0],[1,0],[6,0],[7,0],
-  [0,1],[1,1],[6,1],[7,1],
-  [0,2],[1,2],[6,2],[7,2],
-  [0,3],[1,3],[2,3],[3,3],[4,3],[5,3],[6,3],[7,3],
-  [0,4],[1,4],[2,4],[3,4],[4,4],[5,4],[6,4],[7,4],
-  [0,5],[1,5],[6,5],[7,5],
-  [0,6],[1,6],[6,6],[7,6],
-  [0,7],[1,7],[6,7],[7,7],
-];
-
-// Pattern 7: Spiral / S-Shape
-const P_SPIRAL: number[][] = [
-  [2,0],[3,0],[4,0],[5,0],[6,0],[7,0],
-  [1,1],[2,1],
-  [0,2],[1,2],
-  [0,3],[1,3],[2,3],[3,3],[4,3],[5,3],
-  [5,4],[6,4],
-  [6,5],[7,5],
-  [1,6],[2,6],[3,6],[4,6],[5,6],[6,6],
-  [0,7],[1,7],
-];
-
-// Pattern 8: Frame / Ring
-const P_FRAME: number[][] = [
-  [1,0],[2,0],[3,0],[4,0],[5,0],[6,0],
-  [0,1],[1,1],[6,1],[7,1],
-  [0,2],[1,2],[6,2],[7,2],
-  [0,3],[1,3],[6,3],[7,3],
-  [0,4],[1,4],[6,4],[7,4],
-  [0,5],[1,5],[6,5],[7,5],
-  [1,6],[2,6],[3,6],[4,6],[5,6],[6,6],
-];
-
-// Pattern 9: Lightning Bolt
-const P_LIGHTNING: number[][] = [
-  [4,0],[5,0],[6,0],[7,0],
-  [3,1],[4,1],[5,1],
-  [2,2],[3,2],[4,2],
-  [1,3],[2,3],[3,3],[4,3],[5,3],
-  [3,4],[4,4],[5,4],
-  [2,5],[3,5],[4,5],
-  [0,6],[1,6],[2,6],[3,6],
-];
-
-const ALL_PATTERNS: number[][][] = [
-  P_CROSS, P_DIAMOND, P_TSHAPE, P_BUTTERFLY, P_CASTLE,
-  P_ARROW, P_HSHAPE, P_SPIRAL, P_FRAME, P_LIGHTNING,
-];
-
-export function generateLayout(level: number) {
-  const layout: number[][] = [];
-
-  // Pick pattern: cycles through all 10 patterns
-  const patternIndex = (level - 1) % ALL_PATTERNS.length;
-  const basePattern = ALL_PATTERNS[patternIndex];
-
-  // Layers increase with level: 1 layer for levels 1-10, 2 for 11-30, 3 for 31+
-  const layers = level <= 10 ? 1 : level <= 30 ? 2 : 3;
-
-  for (let z = 0; z < layers; z++) {
-    const shrink = z; // Upper layers are smaller
-
-    for (const [px, py] of basePattern) {
-      if (z > 0) {
-        // For upper layers, only keep tiles near center
-        const centerX = 3.5;
-        const centerY = 3.5;
-        const maxDist = Math.max(3 - shrink, 1.5);
-        if (Math.abs(px - centerX) > maxDist || Math.abs(py - centerY) > maxDist) continue;
-      }
-
-      const offsetZ = z * 0.5;
-      layout.push([(px + offsetZ) * 2, (py + offsetZ) * 2, z]);
-    }
+    positions = [...left, ...right];
   }
 
-  // Ensure even number of tiles
-  if (layout.length % 2 !== 0) layout.pop();
-  return layout;
+  // Ensure even number
+  if (positions.length % 2 !== 0) positions.pop();
+  return positions;
 }
 
 const CHARACTERS = [
@@ -201,7 +178,7 @@ export function generateBoard(level: number): TileData[] {
   const numPairs = totalTiles / 2;
 
   let selectedChars: string[] = [];
-  const variety = Math.min(10 + level, CHARACTERS.length);
+  const variety = Math.min(8 + level, CHARACTERS.length);
   const pool = CHARACTERS.slice(0, variety);
 
   for (let i = 0; i < numPairs; i++) {
@@ -227,17 +204,6 @@ export function generateBoard(level: number): TileData[] {
 
 export function isTileFree(tile: TileData, board: TileData[]): boolean {
   if (tile.state === 'matched') return false;
-
-  const activeTiles = board.filter(t =>
-    t.state !== 'matched' &&
-    t.id !== tile.id
-  );
-
-  const hasTopBlocker = activeTiles.some(t =>
-    t.z > tile.z &&
-    Math.abs(t.x - tile.x) < 2 &&
-    Math.abs(t.y - tile.y) < 2
-  );
-
-  return !hasTopBlocker;
+  // No stacking = all non-matched tiles are always free
+  return true;
 }
