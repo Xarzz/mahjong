@@ -4,6 +4,8 @@ import { Tile } from './Tile';
 import confetti from 'canvas-confetti';
 import { RefreshCw, Trophy, Target, Sparkles } from 'lucide-react';
 
+const UNIT = 45;
+
 export const GameBoard: React.FC = () => {
   const [level, setLevel] = useState(1);
   const [score, setScore] = useState(0);
@@ -25,7 +27,6 @@ export const GameBoard: React.FC = () => {
         setBoard(b => b.map(t => t.id === tile.id ? { ...t, state: 'idle' as const } : t));
         setSelectedTile(null);
       } else if (selectedTile.char === tile.char) {
-        // Match!
         const newBoard = board.map(t => 
           t.id === tile.id || t.id === selectedTile.id 
             ? { ...t, state: 'matched' as const } 
@@ -35,7 +36,6 @@ export const GameBoard: React.FC = () => {
         setScore(prev => prev + 100 * level);
         setSelectedTile(null);
 
-        // Check level win
         if (newBoard.every(t => t.state === 'matched')) {
           confetti({
             particleCount: 150,
@@ -72,6 +72,24 @@ export const GameBoard: React.FC = () => {
 
   const remainingPairs = board.filter(t => t.state !== 'matched').length / 2;
 
+  // Calculate board boundaries to center it
+  const bounds = useMemo(() => {
+    if (board.length === 0) return { width: 0, height: 0, offsetX: 0, offsetY: 0 };
+    const xs = board.map(t => t.x);
+    const ys = board.map(t => t.y);
+    const minX = Math.min(...xs);
+    const maxX = Math.max(...xs);
+    const minY = Math.min(...ys);
+    const maxY = Math.max(...ys);
+    
+    return {
+      width: (maxX - minX + 2) * UNIT,
+      height: (maxY - minY + 2) * UNIT,
+      offsetX: minX * UNIT,
+      offsetY: minY * UNIT
+    };
+  }, [board]);
+
   return (
     <div className="game-container" style={{ 
       backgroundColor: theme.bg,
@@ -106,13 +124,21 @@ export const GameBoard: React.FC = () => {
       </div>
 
       <div className="board-container" style={{ background: theme.panel }}>
-        <div className="board-inner">
+        <div 
+          className="board-inner"
+          style={{ 
+            width: `${bounds.width}px`, 
+            height: `${bounds.height}px`
+          }}
+        >
           {board.map(tile => (
             <Tile
               key={tile.id}
               data={tile}
               isFree={isTileFree(tile, board)}
               onClick={handleTileClick}
+              // Adjust position by subtracting min bounds to local center
+              styleOffset={{ x: bounds.offsetX, y: bounds.offsetY }}
             />
           ))}
           {remainingPairs === 0 && (

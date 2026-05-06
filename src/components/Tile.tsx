@@ -5,16 +5,17 @@ interface TileProps {
   data: TileData;
   isFree: boolean;
   onClick: (tile: TileData) => void;
+  styleOffset?: { x: number, y: number };
 }
 
-export const Tile: React.FC<TileProps> = ({ data, isFree, onClick }) => {
+export const Tile: React.FC<TileProps> = ({ data, isFree, onClick, styleOffset = { x: 0, y: 0 } }) => {
   const isMatched = data.state === 'matched';
   const isSelected = data.state === 'selected';
   
   const UNIT = 45;
 
-  const left = data.x * UNIT;
-  const top = data.y * UNIT;
+  const left = data.x * UNIT - styleOffset.x;
+  const top = data.y * UNIT - styleOffset.y;
   
   const zOffset = data.z * 10; 
   const zIndex = data.z * 100 + data.x + data.y;

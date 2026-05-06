@@ -134,8 +134,6 @@ body {
 
 .board-inner {
   position: relative;
-  width: 1100px;
-  height: 1100px;
   display: flex;
   align-items: center;
   justify-content: center;
